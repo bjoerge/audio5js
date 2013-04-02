@@ -22,6 +22,53 @@
 
   "use strict";
 
+  // domReady function from https://github.com/ded/domready
+  var domReady = (function(ready) {
+    var fns = [], fn, f = false
+      , doc = document
+      , testEl = doc.documentElement
+      , hack = testEl.doScroll
+      , domContentLoaded = 'DOMContentLoaded'
+      , addEventListener = 'addEventListener'
+      , onreadystatechange = 'onreadystatechange'
+      , readyState = 'readyState'
+      , loaded = /^loade|c/.test(doc[readyState])
+
+    function flush(f) {
+      loaded = 1;
+      while (f = fns.shift()) f()
+    }
+
+    doc[addEventListener] && doc[addEventListener](domContentLoaded, fn = function () {
+      doc.removeEventListener(domContentLoaded, fn, f)
+      flush();
+    }, f);
+
+    hack && doc.attachEvent(onreadystatechange, fn = function () {
+      if (/^c/.test(doc[readyState])) {
+        doc.detachEvent(onreadystatechange, fn)
+        flush()
+      }
+    })
+    return (ready = hack ?
+      function (fn) {
+        self != top ?
+          loaded ? fn() : fns.push(fn) :
+          function () {
+            try {
+              testEl.doScroll('left')
+            } catch (e) {
+              return setTimeout(function() { ready(fn) }, 50)
+            }
+            fn()
+          }()
+      } :
+      function (fn) {
+        loaded ? fn() : fns.push(fn)
+      });
+  })();
+
+
   var ActiveXObject = $win.ActiveXObject;
 
   /**
@@ -152,24 +199,24 @@
       var a = document.createElement('audio');
       var mime_str;
       switch (mime_type) {
-      case 'mp3':
-        mime_str = 'audio/mpeg; codecs="mp3"';
-        break;
-      case 'vorbis':
-        mime_str = 'audio/ogg; codecs="vorbis"';
-        break;
-      case 'opus':
-        mime_str = 'audio/ogg; codecs="opus"';
-        break;
-      case 'webm':
-        mime_str = 'audio/webm; codecs="vorbis"';
-        break;
-      case 'mp4':
-        mime_str = 'audio/mp4; codecs="mp4a.40.5"';
-        break;
-      case 'wav':
-        mime_str = 'audio/wav; codecs="1"';
-        break;
+        case 'mp3':
+          mime_str = 'audio/mpeg; codecs="mp3"';
+          break;
+        case 'vorbis':
+          mime_str = 'audio/ogg; codecs="vorbis"';
+          break;
+        case 'opus':
+          mime_str = 'audio/ogg; codecs="opus"';
+          break;
+        case 'webm':
+          mime_str = 'audio/webm; codecs="vorbis"';
+          break;
+        case 'mp4':
+          mime_str = 'audio/mp4; codecs="mp4a.40.5"';
+          break;
+        case 'wav':
+          mime_str = 'audio/wav; codecs="1"';
+          break;
       }
       if (mime_str === undefined) {
         throw new Error('Unspecified Audio Mime Type');
@@ -206,7 +253,11 @@
       d.style.width = '1px';
       d.style.height = '1px';
       d.style.top = '1px';
-      document.body.appendChild(d);
+
+      domReady(function() {
+        document.body.appendChild(d);
+      });
+
       if(typeof($win.swfobject) === 'object'){
         var fv = {
           playerInstance: 'window.'+ ns + '_flash.instances["'+id+'"]'
